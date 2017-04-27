@@ -8,7 +8,23 @@
 </head>
 <body>
 
-Welcome !!!
+<%
+String userName = null;
+Cookie[] cookies = request.getCookies();
+if(cookies != null) {
+	for(Cookie cookie : cookies) {
+		if(cookie.getName().equals("username")) {
+			userName = cookie.getValue();
+		}
+	}
+}
+System.out.println("cookie "+userName);
+if(userName == null) {
+	response.sendRedirect("login.jsp");
+}
+%>
+Welcome <%=userName %>, Login Successful !!!
+
 
 </body>
 </html>

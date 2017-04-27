@@ -61,7 +61,7 @@ public class ISDStationaryServlet extends HttpServlet {
 		try {
 			if(delegate.validateUser(userDTO)) {
 				
-				Cookie loginCookie = new Cookie("user",userDTO.getUserName());
+				Cookie loginCookie = new Cookie("username",userDTO.getUserName());
 				//setting cookie to expiry in 30 mins
 				loginCookie.setMaxAge(30*60);
 				response.addCookie(loginCookie);
@@ -71,15 +71,10 @@ public class ISDStationaryServlet extends HttpServlet {
 				request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);*/
 			} else {
 				System.out.println("UnAuthorized");
-				RequestDispatcher rd = getServletContext().getRequestDispatcher("./pages/login.jsp");
-				PrintWriter out= response.getWriter();
-				out.println("<font color=red>Either user name or password is wrong.</font>");
-				rd.include(request, response);
+				response.sendRedirect("./pages/login.jsp");
 			}
 			
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ServletException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
