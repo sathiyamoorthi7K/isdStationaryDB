@@ -1,10 +1,13 @@
 package com.test.isd.servlet;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,12 +54,33 @@ public class ISDStationaryServlet extends HttpServlet {
 		System.out.println(password);
 		
 		UserDTO userDTO = new UserDTO();
-		userDTO.setUserName(userName);
-		userDTO.setPassWord(password);
+		userDTO.setUserName(userName.trim());
+		userDTO.setPassWord(password.trim());
 		
 		ISDDelegate delegate = new ISDDelegate();
 		try {
-			delegate.validateUser(userDTO);
+			if(delegate.validateUser(userDTO)) {
+				
+				Cookie loginCookie = new Cookie("user",userDTO.getUserName());
+				//setting cookie to expiry in 30 mins
+				loginCookie.setMaxAge(30*60);
+				response.addCookie(loginCookie);
+				response.sendRedirect("./pages/requestform.jsp");
+				
+				/*request.setAttribute("name", "value");
+				request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);*/
+			} else {
+				System.out.println("UnAuthorized");
+				RequestDispatcher rd = getServletContext().getRequestDispatcher("./pages/login.jsp");
+				PrintWriter out= response.getWriter();
+				out.println("<font color=red>Either user name or password is wrong.</font>");
+				rd.include(request, response);
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ServletException e) {
+			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

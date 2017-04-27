@@ -7,22 +7,23 @@
 <title>Insert title here</title>
 </head>
 <body>
-	<form method="post" action="./ISDStationaryServlet">
-		<div>
+	<div align="center">
+		<form method="post" action="../ISDStationaryServlet">
+
 			<table>
 				<tr>
 					<td>Username :</td>
-					<td><input type="text" value="" name="username"/></td>
+					<td><input type="text" value="" name="username" /></td>
 				</tr>
 				<tr>
 					<td>Password :</td>
-					<td><input type="password" value="" name="password"/></td>
+					<td><input type="password" value="" name="password" /></td>
 				</tr>
 				<tr>
-					<td colspan=2><input type="submit" value="Login" /></td>
+					<td colspan=2 align="center"><input type="submit" value="Login" /></td>
 				</tr>
 			</table>
-		</div>
-	</form>
+		</form>
+	</div>
 </body>
 </html>
