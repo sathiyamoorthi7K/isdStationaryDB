@@ -1,18 +1,16 @@
 package com.test.isd.servlet;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.test.isd.delegate.ISDDelegate;
+import com.test.isd.dto.RequestorDTO;
 import com.test.isd.dto.UserDTO;
 
 /**
@@ -61,20 +59,39 @@ public class ISDStationaryServlet extends HttpServlet {
 		try {
 			if(delegate.validateUser(userDTO)) {
 				
-				Cookie loginCookie = new Cookie("username",userDTO.getUserName());
+				/*Cookie loginCookie = new Cookie("username",userDTO.getUserName());
 				//setting cookie to expiry in 30 mins
 				loginCookie.setMaxAge(30*60);
 				response.addCookie(loginCookie);
-				response.sendRedirect("./pages/requestform.jsp");
+				response.sendRedirect("./pages/requestform.jsp");*/
 				
-				/*request.setAttribute("name", "value");
-				request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);*/
+				RequestorDTO requestorDTO = delegate.fetchRequestorDetails(userDTO.getUserName());
+				System.out.println("req "+requestorDTO.getRequestorName());
+				System.out.println("tele "+requestorDTO.getTelephone());
+				System.out.println("grop "+requestorDTO.getGroup());
+				System.out.println("dept "+requestorDTO.getDepartment());
+				System.out.println("section "+requestorDTO.getSection());
+				if(requestorDTO.getRequestorName() != null) {
+					request.setAttribute("username",userDTO.getUserName());
+					request.setAttribute("requestor", requestorDTO);
+					/*request.setAttribute("telephone",requestorDTO.getTelephone());
+					request.setAttribute("group",requestorDTO.getGroup());
+					request.setAttribute("department",requestorDTO.getDepartment());
+					request.setAttribute("section",requestorDTO.getSection());*/
+					request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);
+				} else {
+					System.out.println("UnAuthorized");
+					response.sendRedirect("./pages/login.jsp");
+				}
 			} else {
 				System.out.println("UnAuthorized");
 				response.sendRedirect("./pages/login.jsp");
 			}
 			
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ServletException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
