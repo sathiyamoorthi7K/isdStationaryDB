@@ -2,6 +2,8 @@ package com.test.isd.servlet;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.test.isd.delegate.ISDDelegate;
+import com.test.isd.dto.ItemDescriptionDTO;
 import com.test.isd.dto.RequestorDTO;
 import com.test.isd.dto.UserDTO;
 
@@ -66,18 +69,12 @@ public class ISDStationaryServlet extends HttpServlet {
 				response.sendRedirect("./pages/requestform.jsp");*/
 				
 				RequestorDTO requestorDTO = delegate.fetchRequestorDetails(userDTO.getUserName());
-				System.out.println("req "+requestorDTO.getRequestorName());
-				System.out.println("tele "+requestorDTO.getTelephone());
-				System.out.println("grop "+requestorDTO.getGroup());
-				System.out.println("dept "+requestorDTO.getDepartment());
-				System.out.println("section "+requestorDTO.getSection());
+				 Map<String, List<ItemDescriptionDTO>> itemsDescMap = delegate.fetchItemDetailsMap();
+				
 				if(requestorDTO.getRequestorName() != null) {
 					request.setAttribute("username",userDTO.getUserName());
 					request.setAttribute("requestor", requestorDTO);
-					/*request.setAttribute("telephone",requestorDTO.getTelephone());
-					request.setAttribute("group",requestorDTO.getGroup());
-					request.setAttribute("department",requestorDTO.getDepartment());
-					request.setAttribute("section",requestorDTO.getSection());*/
+					request.setAttribute("itemsMap", itemsDescMap);
 					request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);
 				} else {
 					System.out.println("UnAuthorized");
