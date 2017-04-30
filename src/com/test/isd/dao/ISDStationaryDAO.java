@@ -18,17 +18,19 @@ import com.test.isd.jdbc.ISDConnection;
 
 public class ISDStationaryDAO {
 
-	public boolean validateUser(UserDTO userDTO) throws SQLException {
+	public String validateUser(UserDTO userDTO) throws SQLException {
+		String result = "";
 		boolean isSuccess = false;
 		Connection conn = ISDConnection.getConnection();
-		PreparedStatement stmt = conn.prepareStatement("SELECT USERNAME, PASSWORD FROM USER WHERE USERNAME = ? AND PASSWORD = ?");
+		PreparedStatement stmt = conn.prepareStatement("SELECT USERNAME, PASSWORD, ROLE FROM USER WHERE USERNAME = ? AND PASSWORD = ?");
 		stmt.setString(1, userDTO.getUserName());
 		stmt.setString(2, userDTO.getPassWord());
 		ResultSet rs=stmt.executeQuery();  
 		if(rs.next())  {
 			isSuccess = true;
+			result += rs.getString("ROLE");
 		}
-		return isSuccess;
+		return result+"_"+isSuccess;
 	}
 	
 	
@@ -155,7 +157,10 @@ public class ISDStationaryDAO {
 			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.DELIVERY_DATE DESC";
 		} else if (searchParam.equals("DeliveryDate7days")) {
 			orderBy = " WHERE A.DELIVERY_DATE >= DATE(NOW()) - INTERVAL 7 DAY AND A.STATUS = 'In Approval'";
+		} else {
+			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.STATUS DESC";
 		}
+		System.out.println(searchQuery);
 		String prev = "";
 		String curr = "";
 		PreparedStatement stmt = conn.prepareStatement(searchQuery.concat(orderBy));
@@ -189,7 +194,7 @@ public class ISDStationaryDAO {
 		Connection conn = ISDConnection.getConnection();
 		int rowCount  = 0;
 		for(SubmitRequestDTO submitRequestDTO: requestList) {
-			String inserQuery = "UPDATE REQUESTS SET STATUS = ? ";
+			String inserQuery = "UPDATE REQUESTS SET LAST_UPD_TIME = CURRENT_TIMESTAMP STATUS = ? ";
 			if(submitRequestDTO.getDeliveryDate() != null) {
 				inserQuery += ", DELIVERY_DATE = ? ";
 			}
@@ -208,6 +213,69 @@ public class ISDStationaryDAO {
 		return rowCount;
 	}
 	
+	public List<String> searchRequestsByUserName(String userName) throws SQLException {
+		List<String> requestIdList = new ArrayList<String>();
+		Connection conn = ISDConnection.getConnection();
+		PreparedStatement stmt = conn.prepareStatement("SELECT REQUEST_ID FROM REQUESTS WHERE REQUESTED_BY = ?");
+		stmt.setString(1, userName);
+		ResultSet rs=stmt.executeQuery(); 
+		while(rs.next())  {
+			requestIdList.add(rs.getString("REQUEST_ID"));
+		}
+		
+		return requestIdList;
+	}
+	
+	public SubmitRequestDTO searchByRequestId(String requestId) throws SQLException {
+		SubmitRequestDTO submitRequestDTO = new SubmitRequestDTO();
+		Connection conn = ISDConnection.getConnection();
+		PreparedStatement stmt = conn.prepareStatement("SELECT A.REQUEST_ID,A.REQUESTED_BY,  A.STATUS, A.DELIVERY_DATE, B.ITEM_NAME, B.ITEM_DESC,B.QUANTITY FROM REQUESTS A INNER JOIN ITEM_REQUESTED B ON A.REQUEST_ID = B.REQUEST_ID WHERE A.REQUEST_ID = ?");
+		stmt.setString(1, requestId);
+		ResultSet rs=stmt.executeQuery(); 
+		ItemRequestedDTO itemRequestedDTO = null;
+		List<ItemRequestedDTO> itemRequested = new ArrayList<ItemRequestedDTO>();
+		while(rs.next())  {
+			itemRequestedDTO= new ItemRequestedDTO();
+			submitRequestDTO.setRequestId(rs.getString("REQUEST_ID"));
+			submitRequestDTO.setDeliveryDate(rs.getDate("DELIVERY_DATE"));
+			submitRequestDTO.setRequestBy(rs.getString("REQUESTED_BY"));
+			submitRequestDTO.setStatus(rs.getString("STATUS"));
+			itemRequestedDTO.setItem_desc(rs.getString("ITEM_DESC"));
+			itemRequestedDTO.setItem_name(rs.getString("ITEM_NAME"));
+			itemRequestedDTO.setQuantity(rs.getInt("QUANTITY"));
+			itemRequested.add(itemRequestedDTO);
+		}
+		submitRequestDTO.setItemList(itemRequested);
+		return submitRequestDTO;
+		
+	}
+	
+	public int updateRequestById(SubmitRequestDTO submitRequestDTO) throws SQLException {
+		Connection conn = ISDConnection.getConnection();
+		int rowCount  = 0;
+			
+			if(submitRequestDTO.getDeliveryDate() != null) {
+				String inserQuery = "UPDATE REQUESTS ";
+				inserQuery += " SET DELIVERY_DATE = ?, LAST_UPD_TIME = CURRENT_TIMESTAMP WHERE REQUEST_ID = ? ";
+				PreparedStatement preparedStatement = conn.prepareStatement(inserQuery);
+				preparedStatement.setDate(1, submitRequestDTO.getDeliveryDate());
+				preparedStatement.setString(2, submitRequestDTO.getRequestId());
+				rowCount = preparedStatement.executeUpdate();
+			} 
+			for(ItemRequestedDTO item : submitRequestDTO.getItemList()) {
+				if(item.getQuantity() > 0) {
+					String inserQuery = "UPDATE ITEM_REQUESTED ";
+					inserQuery += " SET QUANTITY = ? WHERE REQUEST_ID = ? AND ITEM_DESC = ?";
+					PreparedStatement preparedStatement = conn.prepareStatement(inserQuery);
+					preparedStatement.setInt(1, item.getQuantity());
+					preparedStatement.setString(2, submitRequestDTO.getRequestId());
+					preparedStatement.setString(3,item.getItem_desc());
+					rowCount = preparedStatement.executeUpdate();
+					
+				}
+			}
+		return rowCount;
+	}
 	
 	
 	

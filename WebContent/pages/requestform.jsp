@@ -22,13 +22,13 @@ $(document).ready(function() {
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/resources/demos/style.css">
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquer y-ui.js"></script>
   <script>
   $( function() {
     $( "#datepicker" ).datepicker();
   } );
   </script>
-
+  
 </head>
 <body>
 
@@ -46,15 +46,35 @@ if(userName == null) response.sendRedirect("./pages/login.jsp");
 
 %>
 	Welcome
-	<%=userName %>, Login Successful !!!
+	<% if(userName.equals("")) {
+		
+		%>
+		<%=requestorDTO.getRequestorName()%>
+		<%
+	} else {
+		%>
+		<%=userName%>
+		<%} %>
+		, Login Successful !!!
+
 
 	<div align="center">
+		
+		<form method="post" action="ISDStationaryServlet">
+		<table>
+		<td><input type = "submit" value = "Search Requests"/>
+		<input type="hidden" value="searchrequest" name="searchrequest"/>
+		<input type="hidden" value=<%=requestorDTO.getRequestorName() %> name="usernameforsearch"/>
+		</td>
+		</table>
+		</form>
+		
 
 		<form method="post" action="ISDStationaryServlet">
 			<table>
 				<tr>
 					<td>Staff ID :</td>
-					<td><input type="text" value=<%= userName%> name="staffID"/></td>
+					<td><input type="text" value=<%= requestorDTO.getRequestorName()%> name="staffID"/></td>
 				</tr>
 				<tr>
 					<td>Requester Name :</td>
@@ -97,7 +117,7 @@ if(userName == null) response.sendRedirect("./pages/login.jsp");
 				<tr>
 					<td><%= item.getItemName()%> <input type="hidden" value=<%=item.getItemName() %> name=<%=item.getItemName().toLowerCase()+String.valueOf(i) %> />
 					</td>
-					<td><%= item.getItemDesc()%> <input type="hidden" value=<%=item.getItemDesc() %> name=<%="desc"+item.getItemDesc().toLowerCase()+String.valueOf(i) %> />
+					<td><%= item.getItemDesc()%> <input type="hidden" value="<%=item.getItemDesc() %>" name=<%="desc"+item.getItemName().toLowerCase()+String.valueOf(i) %> />
 					</td>
 					<td><input type="text" name= <%="qty"+i %> value="" /></td>
 					<td><input type="checkbox" name="selecteditems"	value=<%=i %> /></td>
@@ -109,7 +129,7 @@ if(userName == null) response.sendRedirect("./pages/login.jsp");
 				%>
 
 				<tr>
-					<td><input type="submit" value="Submit" />
+					<td><input type="submit" value="Submit"/>
 					<input type="hidden" value="requestSubmissionForm" name="requestform"/></td>
 				</tr>
 			</table>

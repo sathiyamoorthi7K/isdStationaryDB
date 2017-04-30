@@ -14,7 +14,7 @@ public class ISDDelegate {
 	
 	ISDStationaryDAO isdStationaryDAO = new ISDStationaryDAO();
 
-	public boolean validateUser(UserDTO userDTO) throws SQLException {
+	public String validateUser(UserDTO userDTO) throws SQLException {
 		return isdStationaryDAO.validateUser(userDTO);
 	}
 	
@@ -44,4 +44,15 @@ public class ISDDelegate {
 		return isdStationaryDAO.updateRequest(submitRequestDTO);
 	}
 
+	public List<String> searchRequestsByUserName(String userName) throws SQLException {
+		return isdStationaryDAO.searchRequestsByUserName(userName);
+	}
+	
+	public SubmitRequestDTO searchByRequestId(String requestId) throws SQLException {
+		return isdStationaryDAO.searchByRequestId(requestId);
+	}
+	
+	public int updateRequestById(SubmitRequestDTO submitRequestDTO) throws SQLException {
+		return isdStationaryDAO.updateRequestById(submitRequestDTO);
+	}
 }

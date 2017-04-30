@@ -21,7 +21,7 @@
   </script>
 </head>
 <body>
-<form action="../ISDStationaryServlet" method="post">
+<form action="ISDStationaryServlet" method="post">
 <input type="hidden" value="searchscreen" name="searchscreen"/>
 <table>
 <% List<SubmitRequestDTO> submitRequestDTOList = (List<SubmitRequestDTO>) request.getAttribute("searchresults"); 

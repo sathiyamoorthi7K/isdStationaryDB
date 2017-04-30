@@ -61,16 +61,31 @@ public class ISDStationaryServlet extends HttpServlet {
 			submitRequestDTO.setRequestorDTO(requestorDTO);
 			
 			Calendar today = Calendar.getInstance();
-			Calendar deliveryDateCalendar = Calendar.getInstance();
-			deliveryDateCalendar.setTime(new Date(request.getParameter("delieverydate"))); 
-			deliveryDateCalendar.add(Calendar.DAY_OF_MONTH, 7);
-			Date after7Days = deliveryDateCalendar.getTime();
-			if(deliveryDateCalendar.after(after7Days)) {
-				System.out.println("Delievery date is greater than 7 days from today");
+			Calendar tday = Calendar.getInstance();
+			tday.add(Calendar.DAY_OF_MONTH, 7);
+			if(request.getParameter("delieverydate").equals("")) {
+				
+				submitRequestDTO.setDeliveryDate(new java.sql.Date(tday.getTime().getTime()));
+				
+				
+				submitRequestDTO.setRequestLog("Raised by "+requestorDTO.getRequestorName() + " on "+ new Date(submitRequestDTO.getDeliveryDate().getTime()));			
+				
+			} else {
+				String inputDateString = request.getParameter("delieverydate");
+				SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+				try {
+					Date inputDate = formatter.parse(inputDateString);
+					if(inputDate.after(tday.getTime())) {
+						submitRequestDTO.setDeliveryDate(new java.sql.Date(tday.getTime().getTime()));
+					} else {
+						submitRequestDTO.setDeliveryDate(new java.sql.Date(inputDate.getTime()));
+					}
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
 			}
-			SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-			submitRequestDTO.setRequestLog("Raised by "+requestorDTO.getRequestorName() + " on "+ today.getTime());			
-			submitRequestDTO.setDeliveryDate(new java.sql.Date(after7Days.getTime()));
+			
+			
 			submitRequestDTO.setStatus("In Approval");
 			String month = "";
 			if(today.get(Calendar.MONTH) < 9) {
@@ -132,7 +147,7 @@ public class ISDStationaryServlet extends HttpServlet {
 				 Map<String, List<ItemDescriptionDTO>> itemsDescMap = delegate.fetchItemDetailsMap();
 				System.out.println("name   "+requestorDTO1.getRequestorName());
 				if(requestorDTO1.getRequestorName() != null) {
-					request.setAttribute("username",requestorDTO.getRequestorName());
+					request.setAttribute("usernamefromservlet",requestorDTO.getRequestorName());
 					request.setAttribute("requestor", requestorDTO1); 
 					request.setAttribute("itemsMap", itemsDescMap);
 					System.out.println("item details map "+itemsDescMap.size());
@@ -201,7 +216,86 @@ public class ISDStationaryServlet extends HttpServlet {
 			
 			
 
+		} else if(request.getParameter("searchrequest") != null && request.getParameter("searchrequest").equals("searchrequest")) {
+			ISDDelegate delegate = new ISDDelegate();
+			String username = request.getParameter("usernameforsearch");
+			List<String> requestIdList = null;
+			try {
+				requestIdList = delegate.searchRequestsByUserName(username);
+				request.setAttribute("requestIdList", requestIdList);
+				request.setAttribute("userforrequestsearch", username);
+				request.getRequestDispatcher("./pages/usersearch.jsp").forward(request, response);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+		} else if(request.getParameter("searchbyrequestid") != null) {
+			ISDDelegate delegate = new ISDDelegate();
+			String requestID = request.getParameter("reqid");
+			
+			
+			try {
+				SubmitRequestDTO submitRequestDTO = delegate.searchByRequestId(requestID);
+				
+				String username = submitRequestDTO.getRequestBy();
+				List<String> requestIdList = null;
+				requestIdList = delegate.searchRequestsByUserName(username);
+				request.setAttribute("username", username);
+				request.setAttribute("requestIdList", requestIdList);
+				request.setAttribute("searchbyreqidresult", submitRequestDTO);
+				request.getRequestDispatcher("./pages/usersearch.jsp").forward(request, response);
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
 		}
+		else if(request.getParameter("updaterequestbyuser")!=null) {
+			ISDDelegate delegate = new ISDDelegate();
+			SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy");
+			int itemsize = Integer.parseInt(request.getParameter("itemsize"));
+			System.out.println("Item size : "+itemsize);
+			List<ItemRequestedDTO> itemList = new ArrayList<ItemRequestedDTO>();
+			ItemRequestedDTO itemRequestedDTO = null;
+			SubmitRequestDTO submitRequestDTO = new SubmitRequestDTO();
+			String reqId = "";
+			String delDate = "";
+			for(int i =1;i<=itemsize;i++) {
+				itemRequestedDTO = new ItemRequestedDTO();
+				String itemDesc = request.getParameter("itemdesc"+i);
+				reqId = request.getParameter("requestid"+i);
+				delDate = request.getParameter("delieverydate"+i);
+				itemRequestedDTO.setItem_desc(itemDesc);
+				int qty = 0;
+				if(request.getParameter("newquantity"+i) != null && !request.getParameter("newquantity"+i).equals("")) {
+					qty = Integer.parseInt(request.getParameter("newquantity"+i));
+					itemRequestedDTO.setQuantity(qty);
+				}
+				
+				itemList.add(itemRequestedDTO);
+			}
+			submitRequestDTO.setItemList(itemList);
+			submitRequestDTO.setRequestId(reqId);
+			try {
+				if(!delDate.equals("")) {
+					submitRequestDTO.setDeliveryDate(new java.sql.Date(formatter.parse(delDate).getTime()));
+				}
+				
+				delegate.updateRequestById(submitRequestDTO);
+				
+				String username = request.getParameter("getusername");
+				List<String> requestIdList = null;
+				requestIdList = delegate.searchRequestsByUserName(username);
+				request.setAttribute("requestIdList", requestIdList);
+				request.getRequestDispatcher("./pages/usersearch.jsp").forward(request, response);
+			} catch (ParseException e) {
+				e.printStackTrace();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		
 		
 		response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
@@ -226,25 +320,30 @@ public class ISDStationaryServlet extends HttpServlet {
 		
 		ISDDelegate delegate = new ISDDelegate();
 		try {
-			if(delegate.validateUser(userDTO)) {
+			String result = delegate.validateUser(userDTO);
+			String arr[] = result.split("_");
+			if(arr[1].equals("true")) {
 				
 				/*Cookie loginCookie = new Cookie("username",userDTO.getUserName());
 				//setting cookie to expiry in 30 mins
 				loginCookie.setMaxAge(30*60);
 				response.addCookie(loginCookie);
 				response.sendRedirect("./pages/requestform.jsp");*/
-				
-				RequestorDTO requestorDTO = delegate.fetchRequestorDetails(userDTO.getUserName());
-				 Map<String, List<ItemDescriptionDTO>> itemsDescMap = delegate.fetchItemDetailsMap();
-				
-				if(requestorDTO.getRequestorName() != null) {
-					request.setAttribute("username",userDTO.getUserName());
-					request.setAttribute("requestor", requestorDTO);
-					request.setAttribute("itemsMap", itemsDescMap);
-					request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);
+				if(arr[0].equals("admin")) {
+					request.getRequestDispatcher("./pages/adminsearch.jsp").forward(request, response);
 				} else {
-					System.out.println("UnAuthorized");
-					response.sendRedirect("./pages/login.jsp");
+					RequestorDTO requestorDTO = delegate.fetchRequestorDetails(userDTO.getUserName());
+					 Map<String, List<ItemDescriptionDTO>> itemsDescMap = delegate.fetchItemDetailsMap();
+					
+					if(requestorDTO.getRequestorName() != null) {
+						request.setAttribute("username",userDTO.getUserName());
+						request.setAttribute("requestor", requestorDTO);
+						request.setAttribute("itemsMap", itemsDescMap);
+						request.getRequestDispatcher("./pages/requestform.jsp").forward(request, response);
+					} else {
+						System.out.println("UnAuthorized");
+						response.sendRedirect("./pages/login.jsp");
+					}
 				}
 			} else {
 				System.out.println("UnAuthorized");
