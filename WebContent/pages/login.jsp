@@ -9,7 +9,6 @@
 <body>
 	<div align="center">
 		<form method="post" action="../ISDStationaryServlet">
-
 			<table>
 				<tr>
 					<td>Username :</td>
@@ -20,7 +19,10 @@
 					<td><input type="password" value="" name="password" /></td>
 				</tr>
 				<tr>
-					<td colspan=2 align="center"><input type="submit" value="Login" /></td>
+				
+					<td colspan=2 align="center"><input type="submit" value="Login" />
+						<input type="hidden" value="loginForm" name="loginform"/>
+					</td>
 				</tr>
 			</table>
 		</form>

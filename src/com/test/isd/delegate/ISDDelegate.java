@@ -7,6 +7,7 @@ import java.util.Map;
 import com.test.isd.dao.ISDStationaryDAO;
 import com.test.isd.dto.ItemDescriptionDTO;
 import com.test.isd.dto.RequestorDTO;
+import com.test.isd.dto.SubmitRequestDTO;
 import com.test.isd.dto.UserDTO;
 
 public class ISDDelegate {
@@ -25,6 +26,22 @@ public class ISDDelegate {
 	public Map<String, List<ItemDescriptionDTO>> fetchItemDetailsMap() throws SQLException {
 		Map<String, List<ItemDescriptionDTO>> itemsDescMap = isdStationaryDAO.fetchItemDetailsMap();
 		return itemsDescMap;
+	}
+	
+	public int submitRequest(SubmitRequestDTO submitRequestDTO) throws SQLException {
+		return isdStationaryDAO.submitRequest(submitRequestDTO);
+	}
+	
+	public int getUniqueId() throws SQLException {
+		return isdStationaryDAO.getUniqueId();
+	}
+	
+	public List<SubmitRequestDTO> searchRequests(String searchParam) throws SQLException {
+		return isdStationaryDAO.searchRequests(searchParam);
+	}
+	
+	public int updateRequest(List<SubmitRequestDTO> submitRequestDTO) throws SQLException {
+		return isdStationaryDAO.updateRequest(submitRequestDTO);
 	}
 
 }
