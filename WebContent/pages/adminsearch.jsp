@@ -38,7 +38,7 @@ String searchBy = request.getParameter("searchby");
 		<option value="DeliveryDate" >By Date of Delivery</option>
 		<option value="DeliveryDate7days">By Date of Delivery</option>
 	</select></td>
-	<td><input type="submit" value="Submit"/></td>
+	<td><input type="submit" value="Submit"/>   <input type="hidden" value="1" name="firstpage"/></td>
 </tr>
 </table>
 </form>
@@ -51,7 +51,7 @@ String searchBy = request.getParameter("searchby");
 	<td>Delivery Date</td>
 	<td>Creation Time</td>
 	<td>Item Name</td>
-	<td>Item Description</td>
+	<td>Item Description and Quantity</td>
 	<td>Change Delivery Date</td>
 	<td>Action</td>
 </tr>
@@ -77,14 +77,14 @@ for(SubmitRequestDTO dto : submitRequestDTOList) {
 </td>
 <td>
 <% for(ItemRequestedDTO itemDTO : dto.getItemList()) { %>
-<%=itemDTO.getItem_name() %>
+<%=itemDTO.getItem_name() + "  *****  "+itemDTO.getQuantity()%>
 <%
 break;
 } %>
 </td>
 <td>
 <% for(ItemRequestedDTO itemDTO : dto.getItemList()) { %>
-<%itemDTO.getItem_name();
+<%itemDTO.getItem_desc();
 %>
 <%
 } %>
@@ -109,9 +109,18 @@ i++;
 
 <tr><td><input type="hidden" value=<%=i %> name="updaterequest" />
 <input type="hidden" value=<%=submitRequestDTOList.size() %> name="requestsize"/>
-<input type="hidden" valu=<%=searchBy %> name="searchbyparam"/>
+<input type="hidden" value=<%=searchBy %> name="searchbyparam"/>
 <input type="submit" value="Submit"/></td>
 </tr>
+<tr><td><%int totalRows = Integer.parseInt(request.getAttribute("totalrecords").toString());
+int totalPages = (int) Math.ceil(totalRows / 5);
+for(int k =1;k<=totalPages;k++) {
+	
+%>
+<a href=<%="ISDStationaryServlet?page="+k+"&pageparam=pageparam&searchby="+searchBy%>><%=k %></a>
+
+<%} %>
+</td></tr>
 </table>
 </form>
 <%
@@ -119,9 +128,6 @@ i++;
 }
 
 %>
-
-
-	
 	
 </body>
 </html>

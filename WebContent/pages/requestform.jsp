@@ -11,23 +11,42 @@
 	
 <title>Insert title here</title>
 
-<!-- <script type="text/javascript">
-$(document).ready(function() {
-	$('#items').on('change',function() {
-		alert("Hello");
-	});
-});
-</script>  -->
-
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/resources/demos/style.css">
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquer y-ui.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <script>
   $( function() {
     $( "#datepicker" ).datepicker();
   } );
   </script>
+  
+  <script type="text/javascript">
+  
+			function validation() {
+				var txt = document.requestform.datepicker.value;
+				if (txt == "") {
+					alert("Please choose a delivery date");
+					return false;
+				}
+				
+				var checkboxes = document.getElementsByName("selecteditems");
+				var checkboxesChecked = [];
+				  for (var i=0; i<checkboxes.length; i++) {
+				     if (checkboxes[i].checked) {
+				        checkboxesChecked.push(checkboxes[i]);
+				     }
+				  }
+				  if(checkboxesChecked.length > 0) {
+					  return true;
+				  } else {
+					  alert("Please check on the check box for respective item to get updated");
+					  return false;
+				  }
+				  
+				}
+			
+		</script>
   
 </head>
 <body>
@@ -70,7 +89,7 @@ if(userName == null) response.sendRedirect("./pages/login.jsp");
 		</form>
 		
 
-		<form method="post" action="ISDStationaryServlet">
+		<form method="post" action="ISDStationaryServlet" name="requestform" onsubmit="return validation()">
 			<table>
 				<tr>
 					<td>Staff ID :</td>

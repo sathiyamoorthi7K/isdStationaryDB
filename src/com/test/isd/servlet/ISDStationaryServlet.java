@@ -3,6 +3,7 @@ package com.test.isd.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -125,7 +126,12 @@ public class ISDStationaryServlet extends HttpServlet {
 					itemRequestedDTO.setItem_desc(request.getParameter("descpens"+i));
 					itemRequestedDTO.setItem_name(request.getParameter("pens"+i));
 				}
-				itemRequestedDTO.setQuantity(Integer.parseInt(request.getParameter("qty"+i)));
+				if(request.getParameter("qty"+i).equals("")) {
+					itemRequestedDTO.setQuantity(0);
+				} else {
+					itemRequestedDTO.setQuantity(Integer.parseInt(request.getParameter("qty"+i)));
+				}
+				
 				itemList.add(itemRequestedDTO);
 				
 				System.out.println(request.getParameter("stapler"+i));
@@ -164,31 +170,63 @@ public class ISDStationaryServlet extends HttpServlet {
 		} else if(request.getParameter("searchscreen") != null && request.getParameter("searchscreen").equals("searchscreen")) {
 			ISDDelegate delegate = new ISDDelegate();
 			String searchParameter = request.getParameter("search");
+			int pageNo = Integer.parseInt(request.getParameter("firstpage"));
+			int total=5;
+			
 			List<SubmitRequestDTO> submitRequestDTOList = null;
 			try {
-				submitRequestDTOList = delegate.searchRequests(searchParameter);
+				submitRequestDTOList = delegate.searchRequests(searchParameter, pageNo-1, total);
+				int totalRecords = delegate.getRequestListSizeForPagination();
 				request.setAttribute("searchresults", submitRequestDTOList);
 				request.setAttribute("searchby", searchParameter);
+				request.setAttribute("totalrecords", totalRecords);
 				request.getRequestDispatcher("./pages/adminsearch.jsp").forward(request, response);
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 			
-		}
-		else if(request.getParameter("updaterequest") != null) {
+		} else if(request.getParameter("pageparam")!=null) {
+			ISDDelegate delegate = new ISDDelegate();
+			String page = request.getParameter("page");
+			String searchParameter = request.getParameter("searchby");
+			System.out.println("Page number : "+page);
+			int pageNo = Integer.parseInt(page);
+			int total=5;
+			
+			if(pageNo==1){}  
+			else{  
+				pageNo=pageNo-1;  
+				pageNo=pageNo*total+1;  
+			}
+			
+			List<SubmitRequestDTO> submitRequestDTOList = null;
+			try {
+				submitRequestDTOList = delegate.searchRequests(searchParameter, pageNo-1, total);
+				int totalRecords = delegate.getRequestListSizeForPagination();
+				request.setAttribute("searchresults", submitRequestDTOList);
+				request.setAttribute("searchby", searchParameter);
+				request.setAttribute("totalrecords", totalRecords);
+				request.getRequestDispatcher("./pages/adminsearch.jsp").forward(request, response);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+		} else if(request.getParameter("updaterequest") != null) {
 			ISDDelegate delegate = new ISDDelegate();
 
 			
 			int listSize = Integer.parseInt(request.getParameter("requestsize"));
 			List<SubmitRequestDTO> updateRequestDTOList = new ArrayList<SubmitRequestDTO>();
 			SubmitRequestDTO submitRequestDTO = null;
+			SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy");
 			for(int i =1;i<=listSize;i++) {
 				if(request.getParameter("action"+i) != null && !request.getParameter("action"+i).equals("--select--")) {
 					submitRequestDTO = new SubmitRequestDTO();
 					submitRequestDTO.setRequestId(request.getParameter("req"+String.valueOf(i)));
 					submitRequestDTO.setStatus(request.getParameter("action"+i));
+					submitRequestDTO.setApprovalLog(submitRequestDTO.getStatus()+" by admin on "+new Timestamp(new Date().getTime()));
 					if(request.getParameter("del"+i) != null &&  !request.getParameter("del"+i).equals("")) {
-						SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy");
+						
 						try {
 							submitRequestDTO.setDeliveryDate(new java.sql.Date(formatter.parse(request.getParameter("del"+i)).getTime()));
 						} catch (ParseException e) {
@@ -204,7 +242,9 @@ public class ISDStationaryServlet extends HttpServlet {
 				
 				List<SubmitRequestDTO> submitRequestDTOList = null;
 				String searchParameter = request.getParameter("searchbyparam");
-				submitRequestDTOList = delegate.searchRequests(searchParameter);
+				submitRequestDTOList = delegate.searchRequests(searchParameter,0,5);
+				int totalRecords = delegate.getRequestListSizeForPagination();
+				request.setAttribute("totalrecords", totalRecords);
 				request.setAttribute("searchresults", submitRequestDTOList);
 				request.setAttribute("searchby", searchParameter);
 				request.getRequestDispatcher("./pages/adminsearch.jsp").forward(request, response);

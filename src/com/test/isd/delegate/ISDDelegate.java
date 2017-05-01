@@ -36,8 +36,12 @@ public class ISDDelegate {
 		return isdStationaryDAO.getUniqueId();
 	}
 	
-	public List<SubmitRequestDTO> searchRequests(String searchParam) throws SQLException {
-		return isdStationaryDAO.searchRequests(searchParam);
+	public List<SubmitRequestDTO> searchRequests(String searchParam, int start, int total) throws SQLException {
+		return isdStationaryDAO.searchRequests(searchParam, start, total);
+	}
+	
+	public int getRequestListSizeForPagination() throws SQLException {
+		return isdStationaryDAO.getRequestListSizeForPagination();
 	}
 	
 	public int updateRequest(List<SubmitRequestDTO> submitRequestDTO) throws SQLException {

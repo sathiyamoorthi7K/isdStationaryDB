@@ -138,32 +138,35 @@ public class ISDStationaryDAO {
 		return uniqueID;
 	}
 	
-	public List<SubmitRequestDTO> searchRequests(String searchParam) throws SQLException {
+	public List<SubmitRequestDTO> searchRequests(String searchParam, int start, int total) throws SQLException {
 		SubmitRequestDTO submitRequestDTO = null;
 		List<SubmitRequestDTO> submitRequestDTOList = new ArrayList<SubmitRequestDTO>();
 		List<ItemRequestedDTO> itemsDTOList = null;
 		ItemRequestedDTO itemRequestedDTO = null;
 		String orderBy = "";
 		Connection conn = ISDConnection.getConnection();
-		String searchQuery = "SELECT A.REQUEST_ID, A.REQUESTED_BY, A.DELIVERY_DATE, A.CREATION_TIME, B.ITEM_NAME, B.ITEM_DESC FROM REQUESTS A INNER JOIN ITEM_REQUESTED B ON"
+		String searchQuery = "SELECT A.REQUEST_ID, A.REQUESTED_BY, A.DELIVERY_DATE, A.CREATION_TIME, B.QUANTITY, B.ITEM_NAME, B.ITEM_DESC FROM REQUESTS A INNER JOIN ITEM_REQUESTED B ON"
 				+ "	A.REQUEST_ID = B.REQUEST_ID ";
 		if(searchParam.equals("DateOfRequest")) {
-			orderBy = " WHERE A.STATUS = 'In Approval' ORDER BY A.CREATION_TIME DESC";
+			orderBy = " WHERE A.STATUS = 'In Approval' ORDER BY A.CREATION_TIME DESC LIMIT ?,?";
 		} else if(searchParam.equals("Status")) {
-			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.STATUS ASC";
+			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.STATUS ASC LIMIT ?,?";
 		} else if(searchParam.equals("Name")) {
-			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.REQUESTED_BY";
+			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.REQUESTED_BY LIMIT ?,?";
 		} else if(searchParam.equals("DeliveryDate")) {
-			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.DELIVERY_DATE DESC";
+			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.DELIVERY_DATE DESC LIMIT ?,?";
 		} else if (searchParam.equals("DeliveryDate7days")) {
-			orderBy = " WHERE A.DELIVERY_DATE >= DATE(NOW()) - INTERVAL 7 DAY AND A.STATUS = 'In Approval'";
+			orderBy = " WHERE A.DELIVERY_DATE >= DATE(NOW()) - INTERVAL 7 DAY AND A.STATUS = 'In Approval' LIMIT ?,?";
 		} else {
-			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.STATUS DESC";
+			orderBy = "  WHERE A.STATUS = 'In Approval' ORDER BY A.STATUS DESC LIMIT ?,?";
 		}
 		System.out.println(searchQuery);
 		String prev = "";
 		String curr = "";
+		System.out.println("Search by query : "+ searchQuery.concat(orderBy));
 		PreparedStatement stmt = conn.prepareStatement(searchQuery.concat(orderBy));
+		stmt.setInt(1, start);
+		stmt.setInt(2, total);
 		ResultSet rs=stmt.executeQuery(); 
 		rs=stmt.executeQuery(); 		
 	
@@ -173,6 +176,7 @@ public class ISDStationaryDAO {
 			itemRequestedDTO.setItem_desc(rs.getString("ITEM_DESC"));
 			itemRequestedDTO.setItem_name(rs.getString("ITEM_NAME"));
 			itemRequestedDTO.setRequestId(rs.getString("REQUEST_ID"));
+			itemRequestedDTO.setQuantity(rs.getInt("QUANTITY"));
 			if(!prev.equals(curr)) {
 				itemsDTOList = new ArrayList<ItemRequestedDTO>();
 				submitRequestDTO = new SubmitRequestDTO();
@@ -190,23 +194,40 @@ public class ISDStationaryDAO {
 		return submitRequestDTOList;
 	}
 	
+	public int getRequestListSizeForPagination() throws SQLException {
+		int rowCount = 0;
+		Connection conn = ISDConnection.getConnection();
+		String searchQuery = "SELECT DISTINCT A.REQUEST_ID FROM REQUESTS A INNER JOIN ITEM_REQUESTED B ON"
+				+ "	A.REQUEST_ID = B.REQUEST_ID WHERE A.STATUS = 'In Approval'";
+		System.out.println("Size query : "+searchQuery);
+		PreparedStatement stmt = conn.prepareStatement(searchQuery);
+		ResultSet rs=stmt.executeQuery(); 
+		rs=stmt.executeQuery(); 		
+	
+		while(rs.next())  {
+			rowCount ++;
+		}
+		return rowCount;
+	}
+	
 	public int updateRequest(List<SubmitRequestDTO> requestList) throws SQLException {
 		Connection conn = ISDConnection.getConnection();
 		int rowCount  = 0;
 		for(SubmitRequestDTO submitRequestDTO: requestList) {
-			String inserQuery = "UPDATE REQUESTS SET LAST_UPD_TIME = CURRENT_TIMESTAMP STATUS = ? ";
+			String inserQuery = "UPDATE REQUESTS SET LAST_UPD_TIME = CURRENT_TIMESTAMP, APPROVAL_LOG = ?,  STATUS = ? ";
 			if(submitRequestDTO.getDeliveryDate() != null) {
 				inserQuery += ", DELIVERY_DATE = ? ";
 			}
 			inserQuery += "WHERE REQUEST_ID = ?";
 			
 			PreparedStatement preparedStatement = conn.prepareStatement(inserQuery);
-			preparedStatement.setString(1, submitRequestDTO.getStatus());
+			preparedStatement.setString(1, submitRequestDTO.getApprovalLog());
+			preparedStatement.setString(2, submitRequestDTO.getStatus());
 			if(submitRequestDTO.getDeliveryDate() != null) {
-				preparedStatement.setDate(2, submitRequestDTO.getDeliveryDate());
-				preparedStatement.setString(3, submitRequestDTO.getRequestId());
+				preparedStatement.setDate(3, submitRequestDTO.getDeliveryDate());
+				preparedStatement.setString(4, submitRequestDTO.getRequestId());
 			} else {
-				preparedStatement.setString(2, submitRequestDTO.getRequestId());
+				preparedStatement.setString(3, submitRequestDTO.getRequestId());
 			}
 			rowCount = preparedStatement.executeUpdate();
 		}
